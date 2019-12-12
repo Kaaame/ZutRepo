@@ -18,7 +18,7 @@
 FILE * fp;
 
 unsigned char ppm_arr[SIZE][SIZE];
-int values[SIZE][SIZE];
+int thread_val[MAX_NUM_OF_THREADS];
 
 
 int isprime(int, int *);
@@ -107,7 +107,7 @@ int main()
 					// 	j <= j_end && j >= j_start)
 					// {
 						ppm_arr[i][j] = ptid + 1;
-						if(isprime(ulam_get_map(i,j, SIZE), &values[i][j]))
+						if(isprime(ulam_get_map(i,j, SIZE), &thread_val[ptid]))
 						{
 							
 							ppm_arr[i][j] = 0;
@@ -128,18 +128,10 @@ int main()
 				int ctid = omp_get_thread_num();
 				int ci_start, ci_end, cj_start, cj_end;
 
-				// #pragma omp critical
-				// {
 					#ifdef _COUNT_LOOPS_
 					#pragma omp atomic
 					atomic_cnt++;
 					#endif
-					
-					//eg		i 400 800; j 400 800
-					//ci		400 600	400	600
-					//ci_end	600	800	600	800
-					//cj		400	400	600	600
-					//cj_end	600	600	800	800
 
 					ci_start = i_start + (ctid % 2) * BLOCK_SIZE(block);
 					ci_end = ci_start + BLOCK_SIZE(block);
@@ -152,26 +144,21 @@ int main()
 							ci_start, ci_end, cj_start, cj_end);
 					printf("is=%d ie=%d\tjs=%d je=%d\n\n",
 							i_start, i_end, j_start, j_end);
-				// }
-				//#pragma omp parallel for collapse(2) ordered
-				for(int i = ci_start; i < ci_end; i++)
+				// #pragma omp parallel for collapse(2) ordered schedule(dynamic, 1)
+				for(int i = ctid; i < SIZE; i+=4)
 				{
-					for(int j = cj_start; j < cj_end; j++)
+					for(int j = ptid; j < SIZE; j+=4)
 					{
 						#ifdef _COUNT_LOOPS_
 						#pragma omp atomic
 						atomic_cnt++;
 						#endif
 
-						// if(i <= ci_end && i >= ci_start &&
-						// 	j <= cj_end && j >= cj_start)
-						// {
-							ppm_arr[i][j] = ctid + ptid * no_threads + 1;
-							if(isprime(ulam_get_map(i,j, SIZE), &values[i][j]))
-							{
-								ppm_arr[i][j] = 0;
-							}
-						// }
+						ppm_arr[i][j] = ctid + ptid * no_threads + 1;
+						if(isprime(ulam_get_map(i,j, SIZE), &thread_val[ctid + ptid * no_threads]))
+						{
+							ppm_arr[i][j] = 0;
+						}
 					}
 				}
 			}
@@ -186,7 +173,10 @@ int main()
 
 	end_time = omp_get_wtime();
 	printf("time: %.6f\tnr of threads: %d\n", (end_time - start_time), 1);
-
+	for(int i = 0; i < MAX_NUM_OF_THREADS; i++)
+	{
+		printf("threadid %d; value = %d\n", i, thread_val[i]);
+	}
 	//#pragma omp parallel for collapse(2) ordered
 	for (int y = 0; y < SIZE; y++)
 	{
@@ -211,9 +201,17 @@ int ulam_get_map(int x, int y, int n)
     return pow(l - 1, 2) + d;
 }
 
-int isprime(int n, int *p)
+int isprime(int n, int *iters)
 {
-	for ((*p) = 2; (*p)*(*p) <= n; (*p)++)
-		if (n%(*p) == 0) return 0;
+	int p;
+	for (p = 2; p*p <= n; p++)
+	{
+		if (n%p== 0)
+		{
+			*iters += p;
+			return 0;
+		}
+	}
+	*iters += p;
 	return n > 2;
 }
