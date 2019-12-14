@@ -3,9 +3,17 @@
 #include "maze_gen.c"
 
 
-extern unsigned char **cell;
+extern char **cell;
+extern int w, h;
+
+static int size_h;
+static int size_w;
 
 #define sleep_time 300 // CZAS
+#define WIDTH 5
+#define HEIGHT 8
+
+void print_map();
 
 // int threadid = 1; // glopbalna zmienna watku
 // int posx=0; //pozycja startowa
@@ -111,13 +119,26 @@ extern unsigned char **cell;
 
 int main()
 {
-	// sleep(2);
-	// thread *start = new thread(rusz, threadid, posy, posx); //watek poczatkowy
-	// thread rysurysu = thread(rysujPlansze); //watek do rysowania
-	// start->join();
-	// stopflag = 1;
-	// rysurysu.join();
-	// cout<<"Labirynt rozwiązany!\n";
-    gen_maze(5, 8);
+    gen_maze(WIDTH, HEIGHT);
+	size_h = HEIGHT * 2 + 1;
+	size_w = WIDTH * 2 + 1;
+
+	print_map();
+
 	return 0;
+}
+
+void print_map()
+{
+	// printf("{");
+	for (int i = 0; i < size_h; i++)
+	{
+		// printf("{");
+		for (int j = 0; j < size_w; j++)
+		{
+			printf("%d\t", cell[i][j]);
+		}
+		printf("\n");
+	}
+	// printf("};");
 }

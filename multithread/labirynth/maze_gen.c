@@ -15,7 +15,7 @@
  
 wchar_t glyph[] = L""SPC"│││─┘┐┤─└┌├─┴┬┼"SPC"┆┆┆┄╯╮ ┄╰╭ ┄";
  
-typedef unsigned char byte;
+typedef char byte;
 enum { N = 1, S = 2, W = 4, E = 8, V = 16 };
  
 byte **cell;
@@ -29,18 +29,18 @@ int irand(int n)
 	return r / (RAND_MAX/n);
 }
  
-void show()
+void convert()
 {
 	int i, j, c;
 	each(i, 0, 2 * h) {
 		each(j, 0, 2 * w) {
 			c = cell[i][j];
-            cell[i][j] = !!c;
+            cell[i][j] = !c * -1;
 			// if (c > V) printf("\033[31m");
-			printf("%d ", cell[i][j]);
+			//printf("%d ", cell[i][j]);
 			// if (c > V) printf("\033[m");
 		}
-		putchar('\n');
+		//putchar('\n');
 	}
 }
  
@@ -104,7 +104,7 @@ void make_maze()
 	each(i, 0, 2 * h) each(j, 0, 2 * w) cell[i][j] &= ~V;
 	//solve(1, 1, 2 * w - 1, 2 * h - 1);
  
-	show();
+	convert();
 }
  
 int gen_maze(int _w, int _h)
